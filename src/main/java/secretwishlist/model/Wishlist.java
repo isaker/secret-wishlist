@@ -1,13 +1,10 @@
 package secretwishlist.model;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
-import org.apache.commons.lang3.RandomStringUtils;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 @DynamoDbBean
@@ -17,13 +14,6 @@ public class Wishlist {
     private String id;
     private Instant created;
     private List<Item> items;
-
-    public Wishlist(String name) {
-        this.name = name;
-        this.id = RandomStringUtils.randomAlphanumeric(8);
-        this.created = Instant.now();
-        this.items = new ArrayList<>();
-    }
 
     public void addItem(Item newItem) {
         items.add(newItem);
@@ -37,7 +27,7 @@ public class Wishlist {
         this.name = name;
     }
 
-    @DynamoDBHashKey
+    @DynamoDbPartitionKey
     public String getId() {
         return id;
     }
@@ -46,7 +36,6 @@ public class Wishlist {
         this.id = id;
     }
 
-    @DynamoDBTypeConverted( converter = InstantConverter.class )
     public Instant getCreated() {
         return created;
     }
@@ -55,6 +44,7 @@ public class Wishlist {
         this.created = created;
     }
 
+    @DynamoDbConvertedBy(ItemsAttributeConverter.class)
     public List<Item> getItems() {
         return items;
     }
@@ -63,15 +53,4 @@ public class Wishlist {
         this.items = items;
     }
 
-    static public class InstantConverter implements DynamoDBTypeConverter<String, Instant> {
-        @Override
-        public String convert(Instant instant) {
-            return instant.toString();
-        }
-
-        @Override
-        public Instant unconvert(String s) {
-            return Instant.parse(s);
-        }
-    }
 }

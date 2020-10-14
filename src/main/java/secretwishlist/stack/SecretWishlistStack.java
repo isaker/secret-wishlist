@@ -1,6 +1,7 @@
 package secretwishlist.stack;
 
 import software.amazon.awscdk.core.Construct;
+import software.amazon.awscdk.core.Duration;
 import software.amazon.awscdk.core.Stack;
 import software.amazon.awscdk.core.StackProps;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
@@ -44,6 +45,8 @@ public class SecretWishlistStack extends Stack {
                 .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
                 .handler("secretwishlist.lambda.CreateWishlist::handleRequest")
                 .environment(createWishlistLambdaEnvVarables)
+                .memorySize(1024)
+                .timeout(Duration.seconds(15))
                 .build();
 
         RestApi api = RestApi.Builder.create(this, "SecretWishlistApi")
