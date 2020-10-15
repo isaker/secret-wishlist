@@ -16,7 +16,7 @@ public class ItemsAttributeConverter implements AttributeConverter<List<Item>> {
 
     @Override
     public AttributeValue transformFrom(List<Item> items) {
-        return null;
+        return AttributeValue.builder().s(gson.toJson(items)).build();
     }
 
     @Override

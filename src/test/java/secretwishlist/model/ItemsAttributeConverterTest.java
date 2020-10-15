@@ -32,7 +32,26 @@ public class ItemsAttributeConverterTest {
         System.out.println(resultList);
 
         assertEquals(items.size(), resultList.size());
-        assertEquals(items.get(0).getId(), resultList.get(0).getId());
+        assertEquals(av.s(), gson.toJson(resultList));
+    }
+
+    @Test
+    public void convertArrayListToAttributeValue() {
+        Item item1 = new Item();
+        Item item2 = new Item();
+
+        item1.setId("id1");
+        item2.setId("id2");
+
+        ArrayList<Item> items = new ArrayList<>();
+        items.add(item1);
+        items.add(item2);
+
+        AttributeValue av = converter.transformFrom(items);
+        System.out.println(av);
+
+        assertEquals(gson.toJson(items), av.s());
+
     }
 
 }
