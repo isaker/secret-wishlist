@@ -129,7 +129,11 @@
             <artifactId>dynamodb</artifactId>
             <version>${aws-cdk.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>iam</artifactId>
+            <version>${aws-cdk.version}</version>
+        </dependency>
 
 
 

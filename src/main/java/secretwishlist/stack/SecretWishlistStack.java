@@ -12,10 +12,12 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.iam.*;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class SecretWishlistStack extends Stack {
@@ -40,6 +42,16 @@ public class SecretWishlistStack extends Stack {
         HashMap<String, String> createWishlistLambdaEnvVarables = new HashMap<>();
         createWishlistLambdaEnvVarables.put("wishlistsTable", wishlistsTable.getTableName());
 
+        ArrayList<IManagedPolicy> createWishlistRolePolicies = new ArrayList<>();
+        createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
+        createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"));
+
+        Role createWishlistRole = Role.Builder.create(this, "CreatWishlisRole")
+                .managedPolicies(createWishlistRolePolicies)
+                .description("Used by the Create Wishlist Lambda")
+                .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+                .build();
+
         final Function createWishlistLambda = Function.Builder.create(this, "CreateWishlistHandler")
                 .runtime(Runtime.JAVA_8)
                 .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
@@ -47,6 +59,7 @@ public class SecretWishlistStack extends Stack {
                 .environment(createWishlistLambdaEnvVarables)
                 .memorySize(1024)
                 .timeout(Duration.seconds(15))
+                .role(createWishlistRole)
                 .build();
 
         RestApi api = RestApi.Builder.create(this, "SecretWishlistApi")
