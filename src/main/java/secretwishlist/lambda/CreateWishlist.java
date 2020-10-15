@@ -6,12 +6,10 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 import org.apache.commons.lang3.RandomStringUtils;
+import secretwishlist.dao.WishlistDao;
 import secretwishlist.model.CreateWishlistInput;
 import secretwishlist.model.Wishlist;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.http.HttpStatusCode;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,9 +17,7 @@ import java.util.ArrayList;
 public class CreateWishlist implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private final Gson gson = new Gson();
-    private final DynamoDbClient dynamoDbClient = DynamoDbClient.create();
-    private final DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
-    private final String wishlistsTableName = System.getenv("wishlistsTable");
+    private final WishlistDao wishlistDao = new WishlistDao();
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
@@ -29,9 +25,9 @@ public class CreateWishlist implements RequestHandler<APIGatewayProxyRequestEven
 
         CreateWishlistInput input = gson.fromJson(requestEvent.getBody(), CreateWishlistInput.class);
         Wishlist newWishlist = createNewWishlist(input.getName());
-        storeWishlist(newWishlist);
+        wishlistDao.updateWishlist(newWishlist);
 
-        return createResponse(200, gson.toJson(newWishlist));
+        return createResponse(HttpStatusCode.OK, gson.toJson(newWishlist));
     }
 
     private APIGatewayProxyResponseEvent createResponse(int statusCode, String body) {
@@ -39,11 +35,6 @@ public class CreateWishlist implements RequestHandler<APIGatewayProxyRequestEven
         response.setStatusCode(statusCode);
         response.setBody(body);
         return response;
-    }
-
-    private void storeWishlist(Wishlist newWishlist) {
-        DynamoDbTable<Wishlist> wishlistsTable = dynamoDbEnhancedClient.table(wishlistsTableName, TableSchema.fromBean(Wishlist.class));
-        wishlistsTable.putItem(newWishlist);
     }
 
     private Wishlist createNewWishlist(String name) {
