@@ -12,6 +12,7 @@ import software.amazon.awssdk.http.Header;
 import software.amazon.awssdk.http.HttpStatusCode;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class GetWishlist implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -22,10 +23,11 @@ public class GetWishlist implements RequestHandler<APIGatewayProxyRequestEvent, 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
         try {
-        Optional<String> id = Optional.of(event.getPathParameters().get("id"));
-        Optional<Wishlist> wishlist = wishlistDao.getWishlist(id.orElseThrow(IllegalArgumentException::new));
+            Optional<Map<String, String>> pathParameters = Optional.ofNullable(event.getPathParameters());
+            String id = pathParameters.orElseThrow(IllegalArgumentException::new).get("id");
+            Optional<Wishlist> wishlist = wishlistDao.getWishlist(id);
 
-        return createResponse(HttpStatusCode.OK, gson.toJson(wishlist.orElseThrow(() -> new NotFoundException(id.get()))));
+            return createResponse(HttpStatusCode.OK, gson.toJson(wishlist.orElseThrow(() -> new NotFoundException(id))));
         } catch (IllegalArgumentException e) {
             return createResponse(HttpStatusCode.BAD_REQUEST, "'id' is a required field.");
         } catch (NotFoundException e) {
