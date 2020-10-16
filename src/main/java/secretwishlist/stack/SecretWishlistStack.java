@@ -36,16 +36,16 @@ public class SecretWishlistStack extends Stack {
                                 .build())
                 .build();
 
-        HashMap<String, String> createGetWishlistLambdaEnvVarables = new HashMap<>();
-        createGetWishlistLambdaEnvVarables.put("wishlistsTable", wishlistsTable.getTableName());
+        HashMap<String, String> wishlistLambdasEnvVariables = new HashMap<>();
+        wishlistLambdasEnvVariables.put("wishlistsTable", wishlistsTable.getTableName());
 
         ArrayList<IManagedPolicy> createWishlistRolePolicies = new ArrayList<>();
         createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
         createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"));
 
-        Role wishlisRole = Role.Builder.create(this, "WishlistRole")
+        Role wishlistRole = Role.Builder.create(this, "WishlistRole")
                 .managedPolicies(createWishlistRolePolicies)
-                .description("Used by the Create Wishlist Lambda")
+                .description("Used by Lambdas handling Wishlists")
                 .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
                 .build();
 
@@ -53,20 +53,30 @@ public class SecretWishlistStack extends Stack {
                 .runtime(Runtime.JAVA_8)
                 .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
                 .handler("secretwishlist.lambda.CreateWishlist::handleRequest")
-                .environment(createGetWishlistLambdaEnvVarables)
+                .environment(wishlistLambdasEnvVariables)
                 .memorySize(1024)
                 .timeout(Duration.seconds(15))
-                .role(wishlisRole)
+                .role(wishlistRole)
                 .build();
 
         final Function getWishlistLambda = Function.Builder.create(this, "GetWishlistHandler")
                 .runtime(Runtime.JAVA_8)
                 .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
                 .handler("secretwishlist.lambda.GetWishlist::handleRequest")
-                .environment(createGetWishlistLambdaEnvVarables)
+                .environment(wishlistLambdasEnvVariables)
                 .memorySize(1024)
                 .timeout(Duration.seconds(15))
-                .role(wishlisRole)
+                .role(wishlistRole)
+                .build();
+
+        final Function addItemLambda = Function.Builder.create(this, "AddItemHandler")
+                .runtime(Runtime.JAVA_8)
+                .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
+                .handler("secretwishlist.lambda.AddItem::handleRequest")
+                .environment(wishlistLambdasEnvVariables)
+                .memorySize(1024)
+                .timeout(Duration.seconds(15))
+                .role(wishlistRole)
                 .build();
 
         RestApi api = RestApi.Builder.create(this, "SecretWishlistApi")
@@ -92,7 +102,7 @@ public class SecretWishlistStack extends Stack {
                 .pathPart("wishlist")
                 .parent(api.getRoot())
                 .build();
-        Resource getWishlistIdResource = Resource.Builder.create(this, "getWishlistIdResource")
+        Resource wishlistIdResource = Resource.Builder.create(this, "wishlistIdResource")
                 .pathPart("{id}")
                 .parent(getWishlistBaseResource)
                 .build();
@@ -101,14 +111,25 @@ public class SecretWishlistStack extends Stack {
                 .proxy(true)
                 .build();
 
-//
-//        HashMap<String, Boolean> requestParameters = new HashMap<>();
-//        requestParameters.put("method.request.path.id", true);
-        Method getWishlistPost = Method.Builder.create(this, "getWishlistPost")
+        Method getWishlistMethod = Method.Builder.create(this, "getWishlistMethod")
                 .httpMethod("GET")
-                .resource(getWishlistIdResource)
+                .resource(wishlistIdResource)
                 .integration(getWishlistIntegration)
-                //.options(MethodOptions.builder().requestParameters(requestParameters).build())
+                .build();
+
+        Resource itemResource = Resource.Builder.create(this, "itemResource")
+                .pathPart("item")
+                .parent(wishlistIdResource)
+                .build();
+
+        LambdaIntegration addItemIntegration = LambdaIntegration.Builder.create(addItemLambda)
+                .proxy(true)
+                .build();
+
+        Method postItemMethod = Method.Builder.create(this, "postItemMethod")
+                .httpMethod("POST")
+                .resource(itemResource)
+                .integration(addItemIntegration)
                 .build();
 
     }
