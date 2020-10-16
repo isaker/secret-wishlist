@@ -4,12 +4,18 @@ import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.Duration;
 import software.amazon.awscdk.core.Stack;
 import software.amazon.awscdk.core.StackProps;
-import software.amazon.awscdk.services.apigateway.*;
+import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+import software.amazon.awscdk.services.apigateway.Method;
+import software.amazon.awscdk.services.apigateway.Resource;
+import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
-import software.amazon.awscdk.services.iam.*;
+import software.amazon.awscdk.services.iam.IManagedPolicy;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -98,13 +104,13 @@ public class SecretWishlistStack extends Stack {
                 .integration(createWishlistIntegration)
                 .build();
 
-        Resource getWishlistBaseResource = Resource.Builder.create(this, "getWishlistBaseResource")
+        Resource wishlistBaseResource = Resource.Builder.create(this, "wishlistBaseResource")
                 .pathPart("wishlist")
                 .parent(api.getRoot())
                 .build();
         Resource wishlistIdResource = Resource.Builder.create(this, "wishlistIdResource")
                 .pathPart("{id}")
-                .parent(getWishlistBaseResource)
+                .parent(wishlistBaseResource)
                 .build();
 
         LambdaIntegration getWishlistIntegration = LambdaIntegration.Builder.create(getWishlistLambda)
