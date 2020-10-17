@@ -55,7 +55,7 @@ public class SecretWishlistStack extends Stack {
         wishlistLambdasEnvVariables.put("wishlistsTable", wishlistsTable.getTableName());
 
         HashMap<String, String> basicAuthLambdaEnvVariables = new HashMap<>();
-        wishlistLambdasEnvVariables.put("secretsTable", secretsTable.getTableName());
+        basicAuthLambdaEnvVariables.put("secretsTable", secretsTable.getTableName());
 
         // ROLES
 
@@ -114,7 +114,7 @@ public class SecretWishlistStack extends Stack {
         final Function removeItemLambda = Function.Builder.create(this, "RemoveItemHandler")
                 .runtime(Runtime.JAVA_8)
                 .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
-                .handler("secretwishlist.lambda.RemoveItem::handleRequest")
+                .handler("secretwishlist.lambda.ItemHandler::handleRequest")
                 .environment(wishlistLambdasEnvVariables)
                 .memorySize(1024)
                 .timeout(Duration.seconds(15))
@@ -244,6 +244,10 @@ public class SecretWishlistStack extends Stack {
                 .httpMethod("DELETE")
                 .resource(itemIdResource)
                 .integration(removeItemIntegration)
+                .options(MethodOptions.builder()
+                        .authorizationType(AuthorizationType.CUSTOM)
+                        .authorizer(basicAuthorizer)
+                        .build())
                 .build();
 
         // UPDATE ITEM ENDPOINT
@@ -256,6 +260,10 @@ public class SecretWishlistStack extends Stack {
                 .httpMethod("POST")
                 .resource(itemIdResource)
                 .integration(updateItemIntegration)
+                .options(MethodOptions.builder()
+                        .authorizationType(AuthorizationType.CUSTOM)
+                        .authorizer(basicAuthorizer)
+                        .build())
                 .build();
 
         // GET ITEM ENDPOINT

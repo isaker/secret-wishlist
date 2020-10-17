@@ -7,7 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import secretwishlist.utils.HttpResponseUtil;
 import software.amazon.awssdk.http.HttpStatusCode;
 
-public class RemoveItem implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class ItemHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
         return HttpResponseUtil.errorResponse(HttpStatusCode.NOT_FOUND, "NOT IMPLEMENTED");
