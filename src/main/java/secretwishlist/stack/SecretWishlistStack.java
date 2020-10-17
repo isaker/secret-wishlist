@@ -32,6 +32,8 @@ public class SecretWishlistStack extends Stack {
     public SecretWishlistStack(final Construct parent, final String id, final StackProps props) {
         super(parent, id, props);
 
+        // TABLES
+
         Table wishlistsTable = Table.Builder.create(this, "wishlistsTable")
                 .tableName("WishlistsTable")
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -42,8 +44,12 @@ public class SecretWishlistStack extends Stack {
                                 .build())
                 .build();
 
+        // ENVIRONMENT VARIABLES
+
         HashMap<String, String> wishlistLambdasEnvVariables = new HashMap<>();
         wishlistLambdasEnvVariables.put("wishlistsTable", wishlistsTable.getTableName());
+
+        // ROLES
 
         ArrayList<IManagedPolicy> createWishlistRolePolicies = new ArrayList<>();
         createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
@@ -54,6 +60,8 @@ public class SecretWishlistStack extends Stack {
                 .description("Used by Lambdas handling Wishlists")
                 .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
                 .build();
+
+        // LAMBDAS
 
         final Function createWishlistLambda = Function.Builder.create(this, "CreateWishlistHandler")
                 .runtime(Runtime.JAVA_8)
@@ -85,9 +93,23 @@ public class SecretWishlistStack extends Stack {
                 .role(wishlistRole)
                 .build();
 
+        final Function removeItemLambda = Function.Builder.create(this, "RemoveItemHandler")
+                .runtime(Runtime.JAVA_8)
+                .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
+                .handler("secretwishlist.lambda.RemoveItem::handleRequest")
+                .environment(wishlistLambdasEnvVariables)
+                .memorySize(1024)
+                .timeout(Duration.seconds(15))
+                .role(wishlistRole)
+                .build();
+
+        // API GATEWAYS
+
         RestApi api = RestApi.Builder.create(this, "SecretWishlistApi")
                 .restApiName("secret-wishlist-api")
                 .build();
+
+        // CREATE WISHLIST ENDPOINT
 
         Resource createWishlistResource = Resource.Builder.create(this, "createWishlistResource")
                 .pathPart("create-wishlist")
@@ -103,6 +125,8 @@ public class SecretWishlistStack extends Stack {
                 .resource(createWishlistResource)
                 .integration(createWishlistIntegration)
                 .build();
+
+        // GET WISHLIST ENDPOINT
 
         Resource wishlistBaseResource = Resource.Builder.create(this, "wishlistBaseResource")
                 .pathPart("wishlist")
@@ -123,6 +147,8 @@ public class SecretWishlistStack extends Stack {
                 .integration(getWishlistIntegration)
                 .build();
 
+        // ADD ITEM ENDPOINT
+
         Resource itemResource = Resource.Builder.create(this, "itemResource")
                 .pathPart("item")
                 .parent(wishlistIdResource)
@@ -136,6 +162,47 @@ public class SecretWishlistStack extends Stack {
                 .httpMethod("POST")
                 .resource(itemResource)
                 .integration(addItemIntegration)
+                .build();
+
+        // REMOVE ITEM ENDPOINT
+
+        Resource itemIdResource = Resource.Builder.create(this, "itemIdResource")
+                .pathPart("{itemId}")
+                .parent(itemResource)
+                .build();
+
+        LambdaIntegration removeItemIntegration = LambdaIntegration.Builder.create(removeItemLambda)
+                .proxy(true)
+                .build();
+
+        Method deleteItemMethod = Method.Builder.create(this, "deleteItemMethod")
+                .httpMethod("DELETE")
+                .resource(itemIdResource)
+                .integration(removeItemIntegration)
+                .build();
+
+        // UPDATE ITEM ENDPOINT
+
+        LambdaIntegration updateItemIntegration = LambdaIntegration.Builder.create(removeItemLambda)
+                .proxy(true)
+                .build();
+
+        Method updateItemMethod = Method.Builder.create(this, "updateItemMethod")
+                .httpMethod("POST")
+                .resource(itemIdResource)
+                .integration(updateItemIntegration)
+                .build();
+
+        // GET ITEM ENDPOINT
+
+        LambdaIntegration getItemIntegration = LambdaIntegration.Builder.create(removeItemLambda)
+                .proxy(true)
+                .build();
+
+        Method getItemMethod = Method.Builder.create(this, "getItemMethod")
+                .httpMethod("GET")
+                .resource(itemIdResource)
+                .integration(getItemIntegration)
                 .build();
 
     }
