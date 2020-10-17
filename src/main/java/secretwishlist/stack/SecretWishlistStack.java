@@ -4,10 +4,7 @@ import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.Duration;
 import software.amazon.awscdk.core.Stack;
 import software.amazon.awscdk.core.StackProps;
-import software.amazon.awscdk.services.apigateway.LambdaIntegration;
-import software.amazon.awscdk.services.apigateway.Method;
-import software.amazon.awscdk.services.apigateway.Resource;
-import software.amazon.awscdk.services.apigateway.RestApi;
+import software.amazon.awscdk.services.apigateway.*;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -105,15 +102,20 @@ public class SecretWishlistStack extends Stack {
 
         // API GATEWAYS
 
-        RestApi api = RestApi.Builder.create(this, "SecretWishlistApi")
+        RestApi wishlistApi = RestApi.Builder.create(this, "SecretWishlistApi")
                 .restApiName("secret-wishlist-api")
+                .build();
+
+        RequestValidator bodyValidator = RequestValidator.Builder.create(this, "bodyValidator")
+                .validateRequestBody(true)
+                .restApi(wishlistApi)
                 .build();
 
         // CREATE WISHLIST ENDPOINT
 
         Resource createWishlistResource = Resource.Builder.create(this, "createWishlistResource")
                 .pathPart("create-wishlist")
-                .parent(api.getRoot())
+                .parent(wishlistApi.getRoot())
                 .build();
 
         LambdaIntegration createWishlistIntegration = LambdaIntegration.Builder.create(createWishlistLambda)
@@ -130,7 +132,7 @@ public class SecretWishlistStack extends Stack {
 
         Resource wishlistBaseResource = Resource.Builder.create(this, "wishlistBaseResource")
                 .pathPart("wishlist")
-                .parent(api.getRoot())
+                .parent(wishlistApi.getRoot())
                 .build();
         Resource wishlistIdResource = Resource.Builder.create(this, "wishlistIdResource")
                 .pathPart("{id}")
@@ -149,6 +151,24 @@ public class SecretWishlistStack extends Stack {
 
         // ADD ITEM ENDPOINT
 
+        HashMap<String, JsonSchema> newItemSchemaproperties = new HashMap<>();
+        newItemSchemaproperties.put("url", JsonSchema.builder().type(JsonSchemaType.STRING).build());
+        newItemSchemaproperties.put("description", JsonSchema.builder().type(JsonSchemaType.STRING).minLength(1).maxLength(140).build());
+        ArrayList<String> newItemSchemaRequiredProperties = new ArrayList<>();
+        newItemSchemaRequiredProperties.add("description");
+
+        JsonSchema newItemSchema = JsonSchema.builder()
+                .properties(newItemSchemaproperties)
+                .required(newItemSchemaRequiredProperties)
+                .build();
+
+        Model newItemModel = Model.Builder.create(this, "newItemModel")
+                .contentType("application/json")
+                .restApi(wishlistApi)
+                .description("Model used when adding a new Item to a Wishlist.")
+                .schema(newItemSchema)
+                .build();
+
         Resource itemResource = Resource.Builder.create(this, "itemResource")
                 .pathPart("item")
                 .parent(wishlistIdResource)
@@ -158,10 +178,17 @@ public class SecretWishlistStack extends Stack {
                 .proxy(true)
                 .build();
 
+        HashMap<String, Model> postItemMethodModels = new HashMap<>();
+        postItemMethodModels.put("application/json", newItemModel);
+
         Method postItemMethod = Method.Builder.create(this, "postItemMethod")
                 .httpMethod("POST")
                 .resource(itemResource)
                 .integration(addItemIntegration)
+                .options(MethodOptions.builder()
+                        .requestModels(postItemMethodModels)
+                        .requestValidator(bodyValidator)
+                        .build())
                 .build();
 
         // REMOVE ITEM ENDPOINT

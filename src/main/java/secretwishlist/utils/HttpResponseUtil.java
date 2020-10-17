@@ -16,7 +16,7 @@ public class HttpResponseUtil {
     public static APIGatewayProxyResponseEvent errorResponse(int statusCode, String description) {
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
         response.setStatusCode(statusCode);
-        JSONObject body = new JSONObject().put("description", description);
+        JSONObject body = new JSONObject().put("message", description);
         response.setBody(body.toString());
         HashMap<String, String> headers = new HashMap<>();
         headers.put(Header.CONTENT_TYPE, "application/json");
