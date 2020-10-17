@@ -100,6 +100,12 @@ public class SecretWishlistStack extends Stack {
                 .role(wishlistRole)
                 .build();
 
+        final Function basicAuthorizerLambda = Function.Builder.create(this, "BasicAuthorizerLambda")
+                .runtime(Runtime.PYTHON_3_7)
+                .code(Code.fromAsset("python/authorizer"))
+                .handler("BasicAuthorizer.auth_handler")
+                .build();
+
         // API GATEWAYS
 
         RestApi wishlistApi = RestApi.Builder.create(this, "SecretWishlistApi")
@@ -178,6 +184,13 @@ public class SecretWishlistStack extends Stack {
                 .proxy(true)
                 .build();
 
+        ArrayList<String> identitySources = new ArrayList<>();
+        identitySources.add(IdentitySource.header("Authorization"));
+        RequestAuthorizer basicAuthorizer = RequestAuthorizer.Builder.create(this, "basicAuthorizer")
+                .handler(basicAuthorizerLambda)
+                .identitySources(identitySources)
+                .build();
+
         HashMap<String, Model> postItemMethodModels = new HashMap<>();
         postItemMethodModels.put("application/json", newItemModel);
 
@@ -188,6 +201,8 @@ public class SecretWishlistStack extends Stack {
                 .options(MethodOptions.builder()
                         .requestModels(postItemMethodModels)
                         .requestValidator(bodyValidator)
+                        .authorizationType(AuthorizationType.CUSTOM)
+                        .authorizer(basicAuthorizer)
                         .build())
                 .build();
 
