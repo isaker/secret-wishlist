@@ -35,6 +35,7 @@ public class AddItem implements RequestHandler<APIGatewayProxyRequestEvent, APIG
 
             Item newItem = gson.fromJson(body.orElseThrow(() -> new IllegalArgumentException("Request body cannot be null.")), Item.class);
             newItem.setId(UUID.randomUUID().toString());
+            newItem.setBought(false);
             wishlist.orElseThrow(() -> new NotFoundException(id.get())).addItem(newItem);
 
             wishlistDao.updateWishlist(wishlist.get());

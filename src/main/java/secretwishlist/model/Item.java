@@ -5,6 +5,9 @@ public class Item {
     private String id;
     private String description;
     private String url;
+    private boolean bought;
+    private String buyer;
+    private String buyersComment;
 
     @Override
     public String toString() {
@@ -12,7 +15,34 @@ public class Item {
                 "id='" + id + '\'' +
                 ", description='" + description + '\'' +
                 ", url='" + url + '\'' +
+                ", bought=" + bought +
+                ", buyer='" + buyer + '\'' +
+                ", buyersComment='" + buyersComment + '\'' +
                 '}';
+    }
+
+    public boolean isBought() {
+        return bought;
+    }
+
+    public void setBought(boolean bought) {
+        this.bought = bought;
+    }
+
+    public String getBuyer() {
+        return buyer;
+    }
+
+    public void setBuyer(String buyer) {
+        this.buyer = buyer;
+    }
+
+    public String getBuyersComment() {
+        return buyersComment;
+    }
+
+    public void setBuyersComment(String buyersComment) {
+        this.buyersComment = buyersComment;
     }
 
     public String getDescription() {
