@@ -32,7 +32,15 @@ public class SecretWishlistStack extends Stack {
         // TABLES
 
         Table wishlistsTable = Table.Builder.create(this, "wishlistsTable")
-                .tableName("WishlistsTable")
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(
+                        Attribute.builder()
+                                .name("id")
+                                .type(AttributeType.STRING)
+                                .build())
+                .build();
+
+        Table secretsTable = Table.Builder.create(this, "secretsTable")
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(
                         Attribute.builder()
@@ -46,15 +54,28 @@ public class SecretWishlistStack extends Stack {
         HashMap<String, String> wishlistLambdasEnvVariables = new HashMap<>();
         wishlistLambdasEnvVariables.put("wishlistsTable", wishlistsTable.getTableName());
 
+        HashMap<String, String> basicAuthLambdaEnvVariables = new HashMap<>();
+        wishlistLambdasEnvVariables.put("secretsTable", secretsTable.getTableName());
+
         // ROLES
 
-        ArrayList<IManagedPolicy> createWishlistRolePolicies = new ArrayList<>();
-        createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
-        createWishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"));
+        ArrayList<IManagedPolicy> wishlistRolePolicies = new ArrayList<>();
+        wishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
+        wishlistRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"));
 
         Role wishlistRole = Role.Builder.create(this, "WishlistRole")
-                .managedPolicies(createWishlistRolePolicies)
-                .description("Used by Lambdas handling Wishlists")
+                .managedPolicies(wishlistRolePolicies)
+                .description("Used by Lambdas handling Wishlists.")
+                .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
+                .build();
+
+        ArrayList<IManagedPolicy> basicAuthRolePolicies = new ArrayList<>();
+        basicAuthRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
+        basicAuthRolePolicies.add(ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBReadOnlyAccess"));
+
+        Role basicAuthRole = Role.Builder.create(this, "BasicAuthRole")
+                .managedPolicies(basicAuthRolePolicies)
+                .description("Used by Basic Authorizer Lambda to read secrets from DynamoDB.")
                 .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
                 .build();
 
@@ -104,6 +125,8 @@ public class SecretWishlistStack extends Stack {
                 .runtime(Runtime.PYTHON_3_7)
                 .code(Code.fromAsset("python/authorizer"))
                 .handler("BasicAuthorizer.auth_handler")
+                .environment(basicAuthLambdaEnvVariables)
+                .role(basicAuthRole)
                 .build();
 
         // API GATEWAYS

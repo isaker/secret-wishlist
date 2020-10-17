@@ -1,3 +1,8 @@
+import base64
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+
 def auth_handler(event, context):
     print(event)
     auth_header = event['headers']['Authorization']
