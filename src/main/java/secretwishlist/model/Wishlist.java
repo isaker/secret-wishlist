@@ -15,6 +15,16 @@ public class Wishlist {
     private Instant created;
     private List<Item> items;
 
+    public Wishlist() {
+    }
+
+    public Wishlist(Wishlist wishlist) {
+        this.name = wishlist.getName();
+        this.id = wishlist.getId();
+        this.created = wishlist.getCreated();
+        this.items = wishlist.getItems();
+    }
+
     public void addItem(Item newItem) {
         items.add(newItem);
     }
@@ -51,6 +61,13 @@ public class Wishlist {
 
     public void setItems(List<Item> items) {
         this.items = items;
+    }
+
+    public boolean removeItem(String itemId) {
+        Item itemToRemove = new Item();
+        itemToRemove.setId(itemId);
+        return items.remove(itemToRemove);
+
     }
 
 }
