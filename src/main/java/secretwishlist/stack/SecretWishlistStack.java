@@ -1,10 +1,8 @@
 package secretwishlist.stack;
 
-import software.amazon.awscdk.core.Construct;
-import software.amazon.awscdk.core.Duration;
-import software.amazon.awscdk.core.Stack;
-import software.amazon.awscdk.core.StackProps;
+import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.apigateway.*;
+import software.amazon.awscdk.services.apigateway.Resource;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -16,9 +14,14 @@ import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.deployment.BucketDeployment;
+import software.amazon.awscdk.services.s3.deployment.ISource;
+import software.amazon.awscdk.services.s3.deployment.Source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 public class SecretWishlistStack extends Stack {
 
@@ -280,6 +283,30 @@ public class SecretWishlistStack extends Stack {
                 .httpMethod("GET")
                 .resource(itemIdResource)
                 .integration(getItemIntegration)
+                .build();
+
+        // WEBPAGE
+
+        Bucket webpageBucket = Bucket.Builder.create(this, "webpageBucket")
+                .publicReadAccess(true)
+                .websiteIndexDocument("index.html")
+                .build();
+
+        String url = webpageBucket.getBucketWebsiteUrl();
+        System.out.println("URL: " + url);
+
+
+        ArrayList<ISource> sourceFiles = new ArrayList<>();
+        sourceFiles.add(Source.asset("./s3bucket"));
+
+        BucketDeployment bucketDeployment = BucketDeployment.Builder.create(this, "webpageBucketDeployment")
+                .destinationBucket(webpageBucket)
+                .sources(sourceFiles)
+                .build();
+
+        CfnOutput bucketUrlOutput = CfnOutput.Builder.create(this, "bucketUrlOutput")
+                .exportName("BucketURL")
+                .value(webpageBucket.getBucketWebsiteUrl())
                 .build();
 
     }

@@ -134,6 +134,16 @@
             <artifactId>iam</artifactId>
             <version>${aws-cdk.version}</version>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws-cdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>s3-deployment</artifactId>
+            <version>${aws-cdk.version}</version>
+        </dependency>
 
         <!-- Testing -->
         <dependency>
