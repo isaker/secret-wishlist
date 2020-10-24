@@ -57,6 +57,10 @@ public class SecretWishlistStack extends Stack {
         HashMap<String, String> basicAuthLambdaEnvVariables = new HashMap<>();
         basicAuthLambdaEnvVariables.put("secretsTable", secretsTable.getTableName());
 
+        HashMap<String, String> createWishlistLambdaEnvVariables = new HashMap<>();
+        createWishlistLambdaEnvVariables.put("wishlistsTable", wishlistsTable.getTableName());
+        createWishlistLambdaEnvVariables.put("secretsTable", secretsTable.getTableName());
+
         // ROLES
 
         ArrayList<IManagedPolicy> wishlistRolePolicies = new ArrayList<>();
@@ -85,7 +89,7 @@ public class SecretWishlistStack extends Stack {
                 .runtime(Runtime.JAVA_8)
                 .code(Code.fromAsset("target/secret-wishlist-0.1-jar-with-dependencies.jar"))
                 .handler("secretwishlist.lambda.CreateWishlist::handleRequest")
-                .environment(wishlistLambdasEnvVariables)
+                .environment(createWishlistLambdaEnvVariables)
                 .memorySize(1024)
                 .timeout(Duration.seconds(15))
                 .role(wishlistRole)
